@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full dark-theme">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VNTV<title>
+    <link class="js-favicon" rel="icon" type="image/png" href="tv.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'var(--color-primary)',
+                        'primary-hover': 'var(--color-primary-hover)',
+                        'primary-light': 'var(--color-primary-light)',
+                        surface: 'var(--bg-surface)',
+                        variant: 'var(--bg-variant)',
+                        variantHover: 'var(--bg-variant-hover)',
+                        footer: 'var(--bg-footer)',
+                        main: 'var(--text-main)',
+                        muted: 'var(--text-muted)',
+                        borderColor: 'var(--border-color)',
+                        borderInput: 'var(--border-input)',
+                        dialogBg: 'var(--dialog-bg)',
+                        dialogFooter: 'var(--dialog-footer)',
+                        cardActive: 'var(--card-active)',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.compiled.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@nghiavuive/lunar_date_vi@2.0.1/dist/index.umd.min.js"></script>
+    <style>
+        :root.dark-theme {
+            --bg-base: #050505; --bg-surface: rgba(255,255,255,0.03); --bg-variant: rgba(255,255,255,0.04);
+            --bg-variant-hover: rgba(255,255,255,0.08); --bg-footer: rgba(0,0,0,0.4); --text-main: #ededed; --text-muted: #888;
+            --border-color: rgba(255,255,255,0.08); --border-input: rgba(255,255,255,0.06);
+            --dialog-bg: rgba(17,17,17,0.96); --dialog-footer: #0a0a0a; --card-active: rgba(99,102,241,0.12);
+            --color-primary: #6366f1; --color-primary-hover: #818cf8; --color-primary-light: #a5b4fc;
+            --color-primary-light-bg: rgba(165,180,252,0.1); --color-primary-focus-alpha: rgba(99,102,241,0.25);
+        }
+        :root.light-theme {
+            --bg-base: #f3f4f7; --bg-surface: rgba(255,255,255,0.8); --bg-variant: rgba(243,244,246,0.7);
+            --bg-variant-hover: rgba(229,231,235,0.85); --bg-footer: rgba(249,250,251,0.9); --text-main: #111827; --text-muted: #6b7280;
+            --border-color: rgba(0,0,0,0.06); --border-input: rgba(0,0,0,0.1);
+            --dialog-bg: rgba(255,255,255,0.98); --dialog-footer: #f9fafb; --card-active: rgba(99,102,241,0.12);
+            --color-primary: #4f46e5; --color-primary-hover: #4338ca; --color-primary-light: #4f46e5;
+            --color-primary-light-bg: rgba(79,70,229,0.1); --color-primary-focus-alpha: rgba(79,70,229,0.15);
+        }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: var(--bg-base); background-image: radial-gradient(circle at 0% 0%, rgba(99,102,241,0.08) 0%, transparent 50%), radial-gradient(circle at 100% 100%, rgba(168,85,247,0.06) 0%, transparent 50%); color: var(--text-main); }
+        select { background-color: rgba(15,15,15,0.9); color: #ededed; padding: 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); }
+        select option { background-color: #111; color: #ededed; }
+        #sidebarSection { transition: width 0.3s ease, opacity 0.2s ease, padding 0.3s ease, margin 0.3s ease; }
+        #sidebarSection.hidden-sidebar { width: 0 !important; min-width: 0 !important; max-width: 0 !important; padding: 0 !important; margin: 0 !important; opacity: 0; pointer-events: none; border: none !important; overflow: hidden; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 9999px; }
+        video { object-fit: contain !important; background-color: #000; }
+        video::-webkit-media-controls-overlay-play-button { display: none !important; }
+        .multiview-grid { display: grid; gap: 6px; width: 100%; height: 100%; background: #000; overflow: hidden; }
+        .multiview-box { position: relative; background: #000; border: 2px solid transparent; overflow: hidden; transition: all 0.3s; }
+        .multiview-grid.multi-active .multiview-box { border: 1px solid rgba(255,255,255,0.05); }
+        .multiview-grid.multi-active .multiview-box.active-slot { border-color: var(--color-primary) !important; box-shadow: 0 0 15px var(--color-primary); }
+        .wave-container { display: flex; align-items: flex-end; gap: 4px; height: 50px; }
+        .wave-bar { width: 5px; height: 8px; background-color: var(--color-primary); border-radius: 3px; animation: bounce-wave 0.8s ease-in-out infinite alternate; }
+        .wave-bar:nth-child(2) { animation-delay: 0.15s; }
+        .wave-bar:nth-child(3) { animation-delay: 0.3s; }
+        .wave-bar:nth-child(4) { animation-delay: 0.45s; }
+        .wave-bar:nth-child(5) { animation-delay: 0.6s; }
+        @keyframes bounce-wave { 0% { height: 8px; } 100% { height: 50px; } }
+        .channel-item { position: relative; transition: all 0.25s cubic-bezier(0.4,0,0.2,1); border: 1px solid transparent; overflow: hidden; }
+        .channel-item:hover { background: rgba(255,255,255,0.05) !important; border-color: var(--color-primary-focus-alpha) !important; transform: translateX(4px); }
+        .channel-item.active-channel { background: var(--card-active) !important; border-color: var(--color-primary) !important; }
+        .playing-indicator { display: flex; align-items: flex-end; gap: 2px; height: 12px; }
+        .indicator-bar { width: 2px; background: var(--color-primary); border-radius: 1px; animation: bounce-bar 0.8s ease-in-out infinite alternate; }
+        @keyframes bounce-bar { from { height: 4px; } to { height: 12px; } }
+        body.cinema-mode-active header, body.cinema-mode-active #sidebarSection, body.cinema-mode-active #sidebarToggleBtn, body.cinema-mode-active #multiviewBar { display: none !important; }
+        body.cinema-mode-active main { padding: 0 !important; gap: 0 !important; background: #000 !important; }
+        body.cinema-mode-active .stage-container { border-radius: 0 !important; border: none !important; position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999 !important; background: #000 !important; }
+        .seek-feedback { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.75); border-radius: 9999px; padding: 14px; pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 40; }
+        .animate-spin-slow { animation: spin-icon 6s linear infinite; }
+        @keyframes spin-icon { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .player-float-controls { position: absolute; top: 12px; right: 12px; z-index: 30; display: flex; align-items: center; gap: 6px; opacity: 0; transform: translateY(-6px); transition: opacity 0.4s ease, transform 0.4s ease; pointer-events: none; }
+        .player-float-controls.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .stage-container:hover .player-float-controls { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .ctrl-btn { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 14px; border: 1.5px solid var(--color-primary); background: rgba(0,0,0,0.7); backdrop-filter: blur(16px); color: rgba(255,255,255,0.9); cursor: pointer; transition: all 0.2s; outline: none; }
+        .ctrl-btn:hover { background: var(--color-primary); border-color: var(--color-primary-hover); color: #fff; box-shadow: 0 4px 16px var(--color-primary-focus-alpha); transform: scale(1.08); }
+        .glass-panel { background: var(--bg-surface); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--border-color); box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
+        .tooltip { position: relative; }
+        .tooltip:before { content: attr(data-tip); position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%); padding: 4px 8px; background: rgba(0,0,0,0.8); color: #fff; font-size: 10px; border-radius: 4px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .tooltip:hover:before { opacity: 1; }
+        #toast { background: rgba(15,15,15,0.9) !important; backdrop-filter: blur(12px) !important; border: 1px solid rgba(255,255,255,0.08) !important; border-radius: 12px !important; }
+        .mv-btn { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); background: var(--bg-variant); color: var(--text-muted); cursor: pointer; transition: all 0.2s; font-size: 10px; font-weight: 700; }
+        .mv-btn:hover, .mv-btn.active { background: var(--color-primary); color: white; border-color: var(--color-primary); box-shadow: 0 2px 8px var(--color-primary-focus-alpha); }
+        .mv-btn-stop { background: rgba(239,68,68,0.1); color: #f87171; border-color: rgba(239,68,68,0.2); }
+        .mv-btn-stop:hover { background: #ef4444; color: white; border-color: #ef4444; }
+    </style>
+</head>
+<body class="h-full flex flex-col overflow-hidden antialiased selection:bg-indigo-500/30">
+
+    <!-- Header -->
+    <header class="glass-panel border-b border-borderColor px-3 py-2 flex flex-wrap items-center justify-between shrink-0 gap-2 z-20 relative">
+        <!-- Left: Logo + Settings -->
+        <div class="flex items-center gap-2 min-w-0 shrink-0">
+            <div class="bg-primary text-white p-2 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
+                <i class="fa-solid fa-tv text-xs"></i>
+            </div>
+            <h1 class="text-xl font-extrabold tracking-tight text-main ">VNTV</h1>
+            <button onclick="toggleAboutModal(true)" class="text-muted hover:text-primary transition p-0.5" title="Thông tin"><i class="fa-solid fa-circle-info text-[10px]"></i></button>
+            <button onclick="toggleSettingsModal(true)" class="bg-variant hover:bg-variantHover text-main p-1.5 rounded-lg transition border border-borderColor flex items-center justify-center w-7 h-7"><i class="fa-solid fa-plus text-[10px]"></i></button>
+            <button onclick="toggleTheme()" class="bg-variant hover:bg-variantHover text-main p-1.5 rounded-lg transition border border-borderColor flex items-center justify-center w-7 h-7"><i id="themeToggleIconMobile" class="fa-solid fa-moon text-[10px]"></i></button>
+        </div>
+
+
+        <div class="flex items-center bg-variant/50 backdrop-blur-md border border-borderColor rounded-2xl px-3 py-2 gap-3 text-xs shrink-0 w-full md:w-auto justify-center">
+            <div class="flex items-center gap-1.5 text-primary-light font-extrabold">
+                <i class="fa-regular fa-clock"></i>
+                <span class="text-xl" id="txtLiveTime">00:00</span>
+            </div>
+            <div class="h-4 w-[1px] bg-borderColor"></div>
+            <div class="flex flex-col text-left">
+                <span id="txtSolarDate" class="text-main font-bold text-xs">Ngày 01 tháng 01 năm 2026</span>
+                <span id="txtLunarDate" class="text-muted text-[10px] font-semibold">Đang tính toán âm lịch...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main -->
+    <main class="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden relative p-2 gap-2 z-10">
+        
+        <!-- Sidebar -->
+        <section id="sidebarSection" class="w-full md:w-72 lg:w-[300px] glass-panel rounded-xl border border-borderColor flex flex-col shrink-0 md:h-full overflow-hidden order-2 md:order-none" style="min-width:0;">
+            <!-- Playlist -->
+            <div class="p-2.5 space-y-2 border-b border-borderColor shrink-0">
+                <div class="bg-variant rounded-lg p-1.5 border border-borderInput">
+                    <label class="block text-[8px] text-muted font-extrabold mb-0.5 px-1 uppercase tracking-wider">Danh Sách IPTV</label>
+                    <div class="flex items-center gap-1">
+                        <select id="playlistSelect" onchange="onPlaylistChange()" class="flex-1 bg-transparent text-main text-xs font-bold focus:outline-none cursor-pointer truncate">
+                            <option value="">-- Chưa có danh sách --</option>
+                        </select>
+                        <div class="flex items-center gap-0.5 shrink-0">
+                            <button id="updatePlaylistBtn" onclick="updateCurrentPlaylist()" class="text-primary hover:text-main p-0.5 transition opacity-40 cursor-not-allowed" title="Cập nhật"><i class="fa-solid fa-sync text-[10px]"></i></button>
+                            <button id="deletePlaylistBtn" onclick="deleteCurrentPlaylist()" class="text-red-400 hover:text-red-300 p-0.5 transition opacity-40 cursor-not-allowed" title="Xóa"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Search + Group in one row -->
+                <div class="flex gap-1.5">
+                    <div class="relative flex-1">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-muted"><i class="fa-solid fa-magnifying-glass text-[10px]"></i></span>
+                        <input type="text" id="searchInput" oninput="filterChannels()" placeholder="Tìm kênh..." class="w-full bg-variant border border-transparent rounded-lg pl-8 pr-2 py-1.5 text-[11px] text-main placeholder-muted focus:outline-none focus:border-primary focus:bg-surface transition">
+                    </div>
+                    <div class="bg-variant rounded-lg px-2 py-1 border border-borderInput flex items-center">
+                        <select id="groupSelect" onchange="filterChannels()" class="bg-=transparent text-main text-[10px] font-bold focus:outline-none cursor-pointer">
+                            <option value="all">Tất cả kênh</option>
+                        </select>
+                    </div>
+                    <button onclick="toggleFavoritesOnly()" id="favToggleBtn" class="bg-variant hover:bg-variantHover text-muted p-1.5 rounded-lg text-xs transition border border-borderInput w-7 h-7 shrink-0 flex items-center justify-center" title="Yêu thích"><i class="fa-solid fa-star text-[10px]"></i></button>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex border-b border-borderColor shrink-0">
+                <button id="sidebarTabChannels" onclick="setSidebarView('channels')" class="flex-1 py-2 text-[11px] font-extrabold text-primary border-b-2 border-primary transition flex items-center justify-center gap-1"><i class="fa-solid fa-list-ul text-[10px]"></i> Kênh</button>
+                <button id="sidebarTabEpg" onclick="setSidebarView('epg')" class="flex-1 py-2 text-[11px] font-extrabold text-muted border-b-2 border-transparent transition flex items-center justify-center gap-1"><i class="fa-regular fa-calendar-days text-[10px]"></i> Lịch</button>
+            </div>
+
+            <!-- Channel List -->
+            <div class="flex-1 overflow-y-auto p-1.5 space-y-1" id="channelList">
+                <div class="text-center py-10 text-muted text-xs">Chưa nạp Playlist.</div>
+            </div>
+            <!-- EPG Container -->
+            <div class="flex-1 overflow-y-auto p-2 space-y-2 hidden" id="sidebarEpgContainer"></div>
+            
+            <!-- Multiview (inside sidebar) -->
+            <div id="multiviewBar" class="flex flex-wrap items-center gap-1.5 px-3 py-2 border-t border-borderColor bg-footer/50 shrink-0">
+                <span class="text-[8px] font-bold text-muted uppercase tracking-wider mr-1">Đa Màn Hình:</span>
+                <button id="mvBarBtn_1" onclick="selectPrimaryMultiView('1')" class="px-2.5 py-1 rounded-full text-[9px] font-bold transition bg-primary text-white" title="1 màn hình">1</button>
+                <button id="mvBarBtn_2" onclick="selectPrimaryMultiView('2')" class="px-2.5 py-1 rounded-full text-[9px] font-bold transition bg-variant text-muted" title="2 màn hình">2</button>
+                <button id="mvBarBtn_4" onclick="selectPrimaryMultiView('4')" class="px-2.5 py-1 rounded-full text-[9px] font-bold transition bg-variant text-muted" title="4 màn hình">4</button>
+                <div id="mvBarSub_2" class="hidden flex items-center gap-1">
+                    <button id="mvBarBtn_2-horiz" onclick="setMultiView('2-horiz')" class="px-2 py-0.5 rounded-full text-[8px] font-bold transition bg-primary text-white" title="Ngang">⇔</button>
+                    <button id="mvBarBtn_2-vert" onclick="setMultiView('2-vert')" class="px-2 py-0.5 rounded-full text-[8px] font-bold transition bg-variant text-muted" title="Ngang">⇕</button>
+                </div>
+                
+                <button onclick="cycleNextSlot()" class="px-2 py-2 bg-variant hover:bg-variantHover border border-borderColor rounded-md flex items-center justify-center gap-1 transition text-muted hover:text-main text-[8px] font-bold" title="Chuyển kênh"><i class="fa-solid fa-rotate text-[8px]" title="Chuyển kênh"></i></button>
+                <button onclick="stopAllPlaybacks()" class="ml-auto w-6 h-6 bg-red-950/30 hover:bg-red-900/50 text-red-400 border border-red-900/20 rounded-md flex items-center justify-center transition" title="Tắt"><i class="fa-solid fa-stop text-[8px]"></i></button>
+            </div>
+            <div class="px-3 py-2 bg-footer border-t border-borderColor text-[10px] text-muted flex justify-between items-center shrink-0">
+                <span id="channelCount" class="font-bold">Kênh: 0</span>
+                <button onclick="clearAllData()" class="text-red-400 hover:text-red-300 font-extrabold text-[9px] tracking-wide transition">XÓA BỘ NHỚ</button>
+            </div>
+        </section>
+
+        <!-- Toggle Sidebar -->
+        <button id="sidebarToggleBtn" onclick="toggleSidebar()" class="hidden md:flex absolute left-[300px] top-[48%] -translate-y-1/2 z-30 w-4 h-8 glass-panel hover:bg-variantHover border border-borderColor text-main rounded-full items-center justify-center shadow-lg transition" style="margin-left: -8px;">
+            <i id="sidebarToggleIcon" class="fa-solid fa-chevron-left text-[8px]"></i>
+        </button>
+
+        <!-- Player -->
+        <section class="w-full flex-none md:flex-1 flex flex-col bg-black md:bg-surface/60 backdrop-blur-xl rounded-xl border border-borderColor overflow-hidden shadow-2xl relative stage-container z-0 min-w-0 aspect-video md:aspect-auto">
+            <div class="flex-1 relative bg-black overflow-hidden">
+                <div id="multiviewGrid" class="multiview-grid grid-cols-1">
+                    <div id="mvSlot0" class="multiview-box active-slot" onclick="selectSlot(0)">
+                        <video id="videoPlayer0" class="w-full h-full object-contain" autoplay controls controlsList="nofullscreen" disablePictureInPicture></video>
+                        <div id="audioVisualizer0" class="hidden absolute inset-0 bg-[#08080a] flex items-center justify-center z-10"><div class="wave-container"><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div></div></div>
+                        <div id="seekLeftFeedback0" class="seek-feedback left-6"><i class="fa-solid fa-backward-fast text-white text-xl"></i></div>
+                        <div id="seekRightFeedback0" class="seek-feedback right-6"><i class="fa-solid fa-forward-fast text-white text-xl"></i></div>
+                    </div>
+                    <div id="mvSlot1" class="multiview-box hidden" onclick="selectSlot(1)">
+                        <video id="videoPlayer1" class="w-full h-full object-contain" autoplay controls controlsList="nofullscreen" disablePictureInPicture></video>
+                        <div id="audioVisualizer1" class="hidden absolute inset-0 bg-[#08080a] flex items-center justify-center z-10"><div class="wave-container"><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div></div></div>
+                        <div id="seekLeftFeedback1" class="seek-feedback left-6"><i class="fa-solid fa-backward-fast text-white text-xl"></i></div>
+                        <div id="seekRightFeedback1" class="seek-feedback right-6"><i class="fa-solid fa-forward-fast text-white text-xl"></i></div>
+                    </div>
+                    <div id="mvSlot2" class="multiview-box hidden" onclick="selectSlot(2)">
+                        <video id="videoPlayer2" class="w-full h-full object-contain" autoplay controls controlsList="nofullscreen" disablePictureInPicture></video>
+                        <div id="audioVisualizer2" class="hidden absolute inset-0 bg-[#08080a] flex items-center justify-center z-10"><div class="wave-container"><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div></div></div>
+                        <div id="seekLeftFeedback2" class="seek-feedback left-6"><i class="fa-solid fa-backward-fast text-white text-xl"></i></div>
+                        <div id="seekRightFeedback2" class="seek-feedback right-6"><i class="fa-solid fa-forward-fast text-white text-xl"></i></div>
+                    </div>
+                    <div id="mvSlot3" class="multiview-box hidden" onclick="selectSlot(3)">
+                        <video id="videoPlayer3" class="w-full h-full object-contain" autoplay controls controlsList="nofullscreen" disablePictureInPicture></video>
+                        <div id="audioVisualizer3" class="hidden absolute inset-0 bg-[#08080a] flex items-center justify-center z-10"><div class="wave-container"><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div></div></div>
+                        <div id="seekLeftFeedback3" class="seek-feedback left-6"><i class="fa-solid fa-backward-fast text-white text-xl"></i></div>
+                        <div id="seekRightFeedback3" class="seek-feedback right-6"><i class="fa-solid fa-forward-fast text-white text-xl"></i></div>
+                    </div>
+                </div>
+                <!-- Placeholder -->
+                <div id="playerPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center bg-black/95 text-center p-5 z-10">
+                    <div class="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-3"><i class="fa-solid fa-play text-lg ml-1"></i></div>
+                    <h3 class="text-sm font-extrabold text-white">Chưa Chọn Kênh</h3>
+                    <p class="text-[10px] text-muted mt-1">Chọn kênh để bắt đầu.</p>
+                </div>
+                <!-- Floating Controls (essential only) -->
+                <div class="player-float-controls">
+                    <button class="ctrl-btn tooltip" data-tip="Play/Pause" onclick="togglePlayPause()" id="ctrlPlayBtn"><i class="fa-solid fa-pause text-sm" ></i></button>
+                    <button class="ctrl-btn tooltip" data-tip="Tải lại" onclick="retryPlayback()"><i class="fa-solid fa-rotate-right text-sm"></i></button>
+                    <button class="ctrl-btn tooltip" data-tip="Rạp phim" onclick="toggleCinemaMode()" id="ctrlCinemaBtn"><i class="fa-solid fa-lightbulb text-sm"></i></button>
+                    <button class="ctrl-btn tooltip" data-tip="PIP" onclick="togglePip()"><i class="fa-solid fa-clone text-sm"></i></button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODALS -->
+    <div id="settingsModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-dialogBg border border-borderColor rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-borderColor/50 flex items-center justify-between bg-variant/20">
+                <h3 class="text-xs font-extrabold text-main tracking-wider uppercase flex items-center gap-1.5"><i class="fa-solid fa-sliders text-primary"></i> Thêm nguồn phát & EPG</h3>
+                <button onclick="toggleSettingsModal(false)" class="text-muted hover:text-main transition w-7 h-7 rounded-full hover:bg-variant flex items-center justify-center"><i class="fa-solid fa-xmark text-sm"></i></button>
+            </div>
+            <div class="p-5 space-y-4 max-h-[65vh] overflow-y-auto">
+                <div class="space-y-2">
+                    <h4 class="text-[10px] font-extrabold text-primary uppercase tracking-wider">Giao Diện & Màu Sắc</h4>
+                    <div class="grid grid-cols-2 gap-2 mt-1.5">
+                        <button onclick="applyColorTheme('indigo')" class="p-2 bg-variant hover:bg-variantHover rounded-xl border border-borderInput flex items-center gap-2 transition text-left"><span class="w-3 h-3 rounded-full bg-[#6366f1] shrink-0"></span><span class="text-[10px] font-bold text-main">Indigo Night</span></button>
+                        <button onclick="applyColorTheme('purple')" class="p-2 bg-variant hover:bg-variantHover rounded-xl border border-borderInput flex items-center gap-2 transition text-left"><span class="w-3 h-3 rounded-full bg-[#875cff] shrink-0"></span><span class="text-[10px] font-bold text-main">Deep Purple</span></button>
+                        <button onclick="applyColorTheme('blue')" class="p-2 bg-variant hover:bg-variantHover rounded-xl border border-borderInput flex items-center gap-2 transition text-left"><span class="w-3 h-3 rounded-full bg-[#0082ff] shrink-0"></span><span class="text-[10px] font-bold text-main">Neon Blue</span></button>
+                        <button onclick="applyColorTheme('green')" class="p-2 bg-variant hover:bg-variantHover rounded-xl border border-borderInput flex items-center gap-2 transition text-left"><span class="w-3 h-3 rounded-full bg-[#10b981] shrink-0"></span><span class="text-[10px] font-bold text-main">Forest Emerald</span></button>
+                        <button onclick="applyColorTheme('amber')" class="p-2 bg-variant hover:bg-variantHover rounded-xl border border-borderInput flex items-center gap-2 transition text-left"><span class="w-3 h-3 rounded-full bg-[#f59e0b] shrink-0"></span><span class="text-[10px] font-bold text-main">Sunset Amber</span></button>
+                        <button onclick="applyColorTheme('rose')" class="p-2 bg-variant hover:bg-variantHover rounded-xl border border-borderInput flex items-center gap-2 transition text-left"><span class="w-3 h-3 rounded-full bg-[#f43f5e] shrink-0"></span><span class="text-[10px] font-bold text-main">Rose Gold</span></button>
+                    </div>
+                </div>
+                <div class="h-[1px] bg-borderColor/40"></div>
+                <div class="space-y-2">
+                    <h4 class="text-[10px] font-extrabold text-primary uppercase tracking-wider">Nạp Playlist & EPG</h4>
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <button onclick="openPlaylistSetup()" class="p-3 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl text-xs font-bold text-primary flex items-center justify-center gap-1.5 transition"><i class="fa-solid fa-folder-plus text-sm"></i> Thêm Playlist</button>
+                        <button onclick="openEpgSetup()" class="p-3 bg-variant hover:bg-variantHover border border-borderColor rounded-xl text-xs font-bold text-main flex items-center justify-center gap-1.5 transition"><i class="fa-solid fa-calendar-plus text-sm"></i> Đồng Bộ EPG</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="playlistModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-dialogBg border border-borderColor rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-borderColor/50 flex items-center justify-between bg-variant/20">
+                <h3 class="text-xs font-extrabold tracking-wide text-main uppercase">Thêm Playlist IPTV</h3>
+                <button onclick="togglePlaylistModal(false)" class="text-muted hover:text-main transition w-7 h-7 rounded-full hover:bg-variant flex items-center justify-center"><i class="fa-solid fa-xmark text-sm"></i></button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div><label class="block text-[11px] font-bold text-main mb-1.5">Tên Gợi Nhớ</label><input type="text" id="playlistName" placeholder="Tivi gia đình..." class="w-full bg-variant border border-borderColor rounded-xl px-3 py-2 text-xs text-main placeholder-muted focus:outline-none focus:border-primary"></div>
+                <div>
+                    <div class="flex border-b border-borderColor mb-3">
+                        <button onclick="switchTab('url')" id="tab-url" class="flex-1 py-1.5 text-xs font-bold text-primary border-b-2 border-primary focus:outline-none transition">URL</button>
+                        <button onclick="switchTab('file')" id="tab-file" class="flex-1 py-1.5 text-xs font-bold text-muted border-b-2 border-transparent focus:outline-none transition">Tải tệp (.m3u)</button>
+                    </div>
+                    <div id="panel-url" class="space-y-1.5"><label class="block text-[10px] text-muted px-1">Đường dẫn M3U</label><input type="url" id="playlistUrl" placeholder="https://example.com/channels.m3u" class="w-full bg-variant border border-borderColor rounded-xl px-3 py-2.5 text-xs text-main placeholder-muted focus:outline-none focus:border-primary"></div>
+                    <div id="panel-file" class="hidden space-y-1.5"><label class="block text-[10px] text-muted px-1">Chọn tệp .m3u</label><input type="file" id="playlistFileInput" accept=".m3u,.m3u8,.txt" class="w-full bg-variant border border-borderColor rounded-xl px-3 py-2 text-xs text-main file:mr-3 file:py-1 file:px-2.5 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-primary file:text-white file:cursor-pointer"></div>
+                </div>
+            </div>
+            <div class="px-5 py-3 bg-dialogFooter border-t border-borderColor/50 flex justify-end gap-2">
+                <button onclick="togglePlaylistModal(false)" class="px-4 py-2 hover:bg-variant text-primary text-xs font-bold rounded-full transition">Hủy</button>
+                <button onclick="savePlaylist()" class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-full transition shadow-md">Lưu</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="epgModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-dialogBg border border-borderColor rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-borderColor/50 flex items-center justify-between bg-variant/20">
+                <h3 class="text-xs font-extrabold text-main uppercase">Đồng Bộ Lịch EPG</h3>
+                <button onclick="toggleEpgModal(false)" class="text-muted hover:text-main transition w-7 h-7 rounded-full hover:bg-variant flex items-center justify-center"><i class="fa-solid fa-xmark text-sm"></i></button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div class="flex border-b border-borderColor mb-3">
+                    <button onclick="switchEpgTab('url')" id="tab-epg-url" class="flex-1 py-1.5 text-xs font-bold text-primary border-b-2 border-primary focus:outline-none transition">URL</button>
+                    <button onclick="switchEpgTab('file')" id="tab-epg-file" class="flex-1 py-1.5 text-xs font-bold text-muted border-b-2 border-transparent focus:outline-none transition">File XML</button>
+                    <button onclick="switchEpgTab('text')" id="tab-epg-text" class="flex-1 py-1.5 text-xs font-bold text-muted border-b-2 border-transparent focus:outline-none transition">Dán thô</button>
+                </div>
+                <div id="panel-epg-url" class="space-y-1.5"><label class="block text-[10px] text-muted">Đường dẫn XMLTV</label><input type="url" id="epgUrl" placeholder="http://epg.example.com/vietnam.xml" class="w-full bg-variant border border-borderColor rounded-xl px-3 py-2 text-xs text-main placeholder-muted focus:outline-none focus:border-primary"></div>
+                <div id="panel-epg-file" class="hidden space-y-1.5"><input type="file" id="epgFileInput" accept=".xml,.xmltv" class="w-full bg-variant border border-borderColor rounded-xl px-3 py-2 text-xs text-main file:mr-3 file:py-1 file:px-2.5 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-primary file:text-white file:cursor-pointer"></div>
+                <div id="panel-epg-text" class="hidden space-y-1.5"><textarea id="epgTextPaste" rows="3" placeholder="<tv>...</tv>" class="w-full bg-variant border border-borderColor rounded-xl px-3 py-2 text-xs text-main font-mono placeholder-muted focus:outline-none focus:border-primary"></textarea></div>
+                <div id="epgStatusDetails" class="bg-variant rounded-xl p-3 border border-borderColor text-xs text-muted space-y-1.5">
+                    <div class="flex justify-between"><span>Nguồn:</span><span id="lblEpgSource" class="text-primary-light font-bold truncate max-w-[150px]">Chưa cài đặt</span></div>
+                    <div class="flex justify-between"><span>Đồng bộ cuối:</span><span id="lblEpgLastUpdate" class="text-main">Chưa rõ</span></div>
+                    <div class="flex justify-between"><span>Kênh:</span><span id="lblEpgChannelsCount" class="text-green-400 font-bold bg-green-400/10 px-1.5 py-0.5 rounded-full text-[9px]">0</span></div>
+                </div>
+            </div>
+            <div class="px-5 py-3 bg-dialogFooter border-t border-borderColor/50 flex justify-between gap-2">
+                <button onclick="deleteEpgData()" class="px-3.5 py-2 bg-red-950/20 text-red-400 border border-red-900/10 text-xs font-bold rounded-full transition">Xóa lịch</button>
+                <div class="flex gap-1.5">
+                    <button onclick="toggleEpgModal(false)" class="px-4 py-2 hover:bg-variant text-primary text-xs font-bold rounded-full transition">Quay lại</button>
+                    <button onclick="saveEpgSource()" class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-full transition shadow-md">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="aboutModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-dialogBg border border-borderColor rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-borderColor/50 flex items-center justify-between bg-variant/20">
+                <h3 class="text-xs font-extrabold tracking-wide text-main uppercase flex items-center gap-2"><i class="fa-solid fa-circle-info text-primary"></i> Giới Thiệu</h3>
+                <button onclick="toggleAboutModal(false)" class="text-muted hover:text-main transition w-7 h-7 rounded-full hover:bg-variant flex items-center justify-center"><i class="fa-solid fa-xmark text-sm"></i></button>
+            </div>
+            <div class="p-5 space-y-3 text-xs leading-relaxed text-muted">
+                <h4 class="font-extrabold text-main text-sm">VNTV <span class="text-[11px] bg-primary/20 text-primary-light px-2 py-0.5 rounded font-extrabold">v5.0</span></h4>
+                <p>Trình phát IPTV cá nhân siêu nhẹ.</p>
+                <p class="text-main bg-variant/40 p-3 rounded-xl border border-borderColor/50">Phần mềm này <strong>chỉ cung cấp giao diện hiển thị và trình phát</strong>. Người dùng tự chịu trách nhiệm với nguồn, playlist.</p>
+                <div class="flex justify-between items-center text-[10px] pt-2 border-t border-borderColor/50"><span>Gemini x Arena AI            © 2026</span></div>
+            </div>
+            <div class="px-5 py-3 bg-dialogFooter border-t border-borderColor/50 flex justify-end"><button onclick="toggleAboutModal(false)" class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-full transition shadow-md">Đã hiểu</button></div>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-dialogBg border border-borderColor rounded-2xl w-full max-w-xs shadow-2xl overflow-hidden">
+            <div class="p-5 space-y-2"><h3 id="confirmTitle" class="text-xs font-extrabold text-main uppercase">Tiêu đề</h3><p id="confirmMessage" class="text-xs text-muted leading-relaxed">Nội dung...</p></div>
+            <div class="px-5 py-3 bg-dialogFooter border-t border-borderColor/50 flex justify-end gap-1.5">
+                <button onclick="closeConfirm(false)" class="px-3.5 py-1.5 hover:bg-variant text-primary text-xs font-bold rounded-full transition">Hủy</button>
+                <button id="confirmOkBtn" onclick="closeConfirm(true)" class="px-3.5 py-1.5 bg-primary text-white text-xs font-bold rounded-full transition shadow-md">Đồng ý</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="hidden fixed bottom-6 right-6 bg-variant/90 border border-borderColor text-main px-4 py-2.5 rounded-xl shadow-2xl z-50 flex items-center gap-2 max-w-xs transition duration-300 backdrop-blur-md">
+        <i id="toastIcon" class="fa-solid fa-circle-info text-primary text-sm"></i>
+        <span id="toastMessage" class="text-xs font-bold leading-relaxed">Thông báo</span>
+    </div>
+
+    <!-- ============================================================ -->
+    <script>
+        const DB_NAME = "IPTV_Hub_DB_V2"; const DB_VERSION = 2;
+        let db = null, isLocalStorageFallback = false;
+        let playlists = [], currentPlaylistId = "", currentChannels = [];
+        let multiViewActive = false, multiViewFormat = "1", multiViewSlots = [true,false,false,false];
+        let activeSlotIndex = 0, players = [null,null,null,null], currentActiveChannels = [null,null,null,null];
+        let showHidden = false, hiddenChannels = JSON.parse(localStorage.getItem("iptv_hidden_channels")||"{}");
+        let sidebarCollapsed = false, showFavoritesOnly = false, favorites = JSON.parse(localStorage.getItem("iptv_favorites")||"{}");
+        let activeTab = 'url', activeEpgTab = 'url', hudTimer = null, epgChannelsMap = {}, cinemaModeActive = false, currentSidebarView = 'channels';
+        const colorThemes = { indigo:{primary:'#6366f1',hover:'#818cf8',light:'#a5b4fc',lightAlpha:'rgba(165,180,252,0.1)',focusAlpha:'rgba(99,102,241,0.25)'}, purple:{primary:'#875cff',hover:'#7043eb',light:'#d0bcff',lightAlpha:'rgba(208,188,255,0.1)',focusAlpha:'rgba(135,92,255,0.25)'}, blue:{primary:'#0082ff',hover:'#006cdb',light:'#93c5fd',lightAlpha:'rgba(147,197,253,0.1)',focusAlpha:'rgba(0,130,255,0.25)'}, green:{primary:'#10b981',hover:'#059669',light:'#a7f3d0',lightAlpha:'rgba(167,243,208,0.1)',focusAlpha:'rgba(16,185,129,0.25)'}, rose:{primary:'#f43f5e',hover:'#e11d48',light:'#fecdd3',lightAlpha:'rgba(254,205,211,0.1)',focusAlpha:'rgba(244,63,94,0.25)'}, amber:{primary:'#f59e0b',hover:'#d97706',light:'#fde68a',lightAlpha:'rgba(253,230,138,0.1)',focusAlpha:'rgba(245,158,11,0.25)'} };
+        let confirmResolve = null;
+
+        function safePlay(video) { if (!video) return; video.play().catch(e => console.warn("Playback blocked:", e)); }
+        function showConfirm(title, message, isDangerous=false) { return new Promise(resolve => { document.getElementById("confirmTitle").textContent=title; document.getElementById("confirmMessage").textContent=message; const okBtn=document.getElementById("confirmOkBtn"); okBtn.className=isDangerous?"px-4 py-2 bg-red-900 text-red-100 text-xs font-bold rounded-full transition hover:bg-red-800":"px-4 py-2 bg-primary text-white text-xs font-bold rounded-full transition hover:bg-primary-hover shadow-md"; document.getElementById("confirmModal").classList.remove("hidden"); confirmResolve=resolve; }); }
+        function closeConfirm(result) { document.getElementById("confirmModal").classList.add("hidden"); if(confirmResolve){confirmResolve(result);confirmResolve=null;} }
+        function showToast(message, type="info") { const toast=document.getElementById("toast"), icon=document.getElementById("toastIcon"), msg=document.getElementById("toastMessage"); if(!toast||!msg)return; msg.textContent=message; if(type==="success"){if(icon)icon.className="fa-solid fa-circle-check text-green-400 text-sm";}else if(type==="error"){if(icon)icon.className="fa-solid fa-circle-exclamation text-red-400 text-sm";}else{if(icon)icon.className="fa-solid fa-circle-info text-primary text-sm";} toast.classList.remove("hidden"); setTimeout(()=>{toast.classList.add("hidden");},3000); }
+
+        function updateLiveCalendarAndClock() {
+            const now = new Date();
+            document.getElementById("txtLiveTime").textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+            const day = now.getDate(), month = now.getMonth() + 1, year = now.getFullYear();
+            document.getElementById("txtSolarDate").textContent = `Ngày ${day} tháng ${month} năm ${year}`;
+            const lunarEl = document.getElementById("txtLunarDate");
+            if (lunarEl && window._calendar) { try { const lunar = new window._calendar.SolarDate(now).toLunarDate(); const can=["Giáp","Ất","Bính","Đinh","Mậu","Kỷ","Canh","Tân","Nhâm","Quý"], chi=["Tý","Sửu","Dần","Mão","Thìn","Tỵ","Ngọ","Mùi","Thân","Dậu","Tuất","Hợi"]; const isLeap = lunar.leap_month ? " (Nhuận)" : ""; lunarEl.textContent=`Âm lịch: Ngày ${lunar.day}/${lunar.month}${isLeap} (${can[(year-4)%10]} ${chi[(year-4)%12]})`; } catch(e) {} }
+        }
+
+        // DB, Playlist, EPG, M3U parsing - ALL ORIGINAL LOGIC
+        function initDB() { return new Promise(resolve => { try { const req=indexedDB.open(DB_NAME,DB_VERSION); req.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains("playlists"))d.createObjectStore("playlists",{keyPath:"id"});if(!d.objectStoreNames.contains("epg"))d.createObjectStore("epg",{keyPath:"channelId"});}; req.onsuccess=e=>{db=e.target.result;isLocalStorageFallback=false;resolve(db);}; req.onerror=()=>{isLocalStorageFallback=true;resolve(null);}; } catch(err){isLocalStorageFallback=true;resolve(null);} }); }
+        async function loadPlaylistsFromDB() { return new Promise(resolve => { if(isLocalStorageFallback){playlists=JSON.parse(localStorage.getItem("fallback_playlists")||"[]");updatePlaylistDropdown();triggerAutoLoadLastPlaylist();resolve();}else{if(!db){resolve();return;}const tx=db.transaction("playlists","readonly"),store=tx.objectStore("playlists"),req=store.getAll();req.onsuccess=()=>{playlists=req.result||[];updatePlaylistDropdown();triggerAutoLoadLastPlaylist();resolve();};req.onerror=()=>{isLocalStorageFallback=true;loadPlaylistsFromDB().then(resolve);};} }); }
+        function triggerAutoLoadLastPlaylist() { const lastId=localStorage.getItem("iptv_last_playlist_id"); if(lastId&&playlists.some(p=>p.id===lastId)){document.getElementById("playlistSelect").value=lastId;onPlaylistChange();}else if(playlists.length>0){document.getElementById("playlistSelect").value=playlists[0].id;onPlaylistChange();} }
+        function updatePlaylistDropdown() { const sel=document.getElementById("playlistSelect");sel.innerHTML=""; if(playlists.length===0){sel.innerHTML='<option value="">-- Chưa có playlist --</option>';return;} playlists.forEach(p=>{const o=document.createElement("option");o.value=p.id;o.textContent=`${p.name} (${p.channels.length})`;sel.appendChild(o);}); }
+        function savePlaylistToDB(playlist) { return new Promise((resolve,reject)=>{ if(isLocalStorageFallback){const idx=playlists.findIndex(p=>p.id===playlist.id);if(idx!==-1)playlists[idx]=playlist;else playlists.push(playlist);localStorage.setItem("fallback_playlists",JSON.stringify(playlists));resolve();}else{if(!db){reject(new Error("DB not ready"));return;}const tx=db.transaction("playlists","readwrite"),req=tx.objectStore("playlists").put(playlist);req.onsuccess=()=>resolve();req.onerror=()=>reject(req.error);} }); }
+        function deletePlaylistFromDB(id) { return new Promise((resolve,reject)=>{ if(isLocalStorageFallback){playlists=playlists.filter(p=>p.id!==id);localStorage.setItem("fallback_playlists",JSON.stringify(playlists));resolve();}else{if(!db){reject(new Error("DB not ready"));return;}const tx=db.transaction("playlists","readwrite"),req=tx.objectStore("playlists").delete(id);req.onsuccess=()=>resolve();req.onerror=()=>reject(req.error);} }); }
+        async function savePlaylist() { const nameInput=document.getElementById("playlistName").value.trim(),playlistName=nameInput||`Playlist - ${new Date().toLocaleDateString()}`; if(activeTab==='url'){const url=document.getElementById("playlistUrl").value.trim();if(!url){showToast("Nhập URL!","error");return;}showToast("Đang tải...","info");try{const text=await fetchWithFallbackProxies(url);await processAndSavePlaylistContent(playlistName,text,url);}catch(err){showToast(err.message,"error");}}else{const fi=document.getElementById("playlistFileInput");if(fi.files.length===0){showToast("Chọn tệp!","error");return;}const reader=new FileReader();reader.onload=async e=>{await processAndSavePlaylistContent(playlistName,e.target.result,`local_${Date.now()}`);};reader.readAsText(fi.files[0]);} }
+        async function processAndSavePlaylistContent(name,content,id) { try{let channels=parseM3U(content);if(channels.length===0){showToast("Không có kênh hợp lệ!","error");return;}const playlist={id,name,channels,addedAt:Date.now()};await savePlaylistToDB(playlist);await loadPlaylistsFromDB();document.getElementById("playlistSelect").value=id;onPlaylistChange();togglePlaylistModal(false);showToast(`Đã nạp ${channels.length} kênh!`,"success");const epgMatch=content.match(/x-tvg-url="([^"]+)"/i)||content.match(/url-tvg="([^"]+)"/i);if(epgMatch&&epgMatch[1]){showToast("Phát hiện EPG. Đang nạp...","info");setTimeout(()=>autoSyncEpgFromUrl(epgMatch[1].trim()),1000);}}catch(err){showToast(err.message,"error");} }
+        async function autoSyncEpgFromUrl(url) { try{const xml=await fetchWithFallbackProxies(url);await processAndSaveEPG(xml,url);}catch(e){console.warn("EPG auto-sync failed:",e);} }
+        async function deleteCurrentPlaylist() { if(!currentPlaylistId)return;if(await showConfirm("Xóa Playlist?","Danh sách sẽ bị xóa.")){await deletePlaylistFromDB(currentPlaylistId);localStorage.removeItem("iptv_last_playlist_id");await loadPlaylistsFromDB();onPlaylistChange();showToast("Đã xóa.","success");} }
+        async function updateCurrentPlaylist() { if(!currentPlaylistId||currentPlaylistId.startsWith("local_")){showToast("Không thể cập nhật local.","error");return;}const pl=playlists.find(p=>p.id===currentPlaylistId);if(!pl)return;showToast(`Đang đồng bộ: ${pl.name}...`,"info");try{const text=await fetchWithFallbackProxies(currentPlaylistId);await processAndSavePlaylistContent(pl.name,text,currentPlaylistId);}catch(err){showToast(`Lỗi: ${err.message}`,"error");} }
+        function onPlaylistChange() { const sel=document.getElementById("playlistSelect");currentPlaylistId=sel.value;const upBtn=document.getElementById("updatePlaylistBtn"),delBtn=document.getElementById("deletePlaylistBtn");if(!currentPlaylistId){currentChannels=[];renderChannels();upBtn.classList.add("opacity-40","cursor-not-allowed");delBtn.classList.add("opacity-40","cursor-not-allowed");return;} delBtn.classList.remove("opacity-40","cursor-not-allowed");if(currentPlaylistId.startsWith("local_"))upBtn.classList.add("opacity-40","cursor-not-allowed");else upBtn.classList.remove("opacity-40","cursor-not-allowed");localStorage.setItem("iptv_last_playlist_id",currentPlaylistId);const pl=playlists.find(p=>p.id===currentPlaylistId);if(pl){currentChannels=pl.channels;populateGroups();renderChannels();} }
+        async function fetchWithFallbackProxies(url) { try{const r=await fetch(url);if(r.ok)return await r.text();}catch(e){} try{const r=await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);if(r.ok)return await r.text();}catch(e){} try{const r=await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`);if(r.ok)return await r.text();}catch(e){} throw new Error("Không thể nạp dữ liệu."); }
+        function parseM3U(content) { if(!content)return[];const lines=content.split(/\r?\n/),channels=[];let ch=null,kp={};for(let i=0;i<lines.length;i++){let l=lines[i].trim();if(!l||l.startsWith("#EXTM3U"))continue;if(l.startsWith("#KODIPROP:")){const p=l.substring(10).trim(),eq=p.indexOf("=");if(eq!==-1)kp[p.substring(0,eq).trim()]=p.substring(eq+1).trim();continue;}if(l.startsWith("#EXTINF:")){ch={};const idM=l.match(/tvg-id="([^"]+)"/i);if(idM)ch.tvgId=idM[1];const logoM=l.match(/tvg-logo="([^"]+)"/i);if(logoM)ch.logo=logoM[1];const grpM=l.match(/group-title="([^"]+)"/i);ch.group=grpM?grpM[1]:"Khác";const kidM=l.match(/drm-keyid="([^"]+)"/i),dkM=l.match(/drm-key="([^"]+)"/i),lkM=l.match(/license-key="([^"]+)"/i)||l.match(/license-url="([^"]+)"/i);if(kidM||dkM||lkM)ch.drm={type:lkM?'widevine':'clearkey',key:lkM?lkM[1]:(dkM?dkM[1]:''),keyId:kidM?kidM[1]:''};const ci=l.lastIndexOf(",");ch.name=ci!==-1?l.substring(ci+1).trim():"Kênh không tên";}else if(!l.startsWith("#")&&(l.match(/^(https?|rtmp|rtsp|mms|file):/i)||l.includes("://"))){if(!ch)ch={name:l.substring(l.lastIndexOf('/')+1)||"Luồng thô",group:"Khác"};ch.url=l;if(Object.keys(kp).length>0){ch.drm={type:kp['inputstream.adaptive.license_type']||'widevine',key:kp['inputstream.adaptive.license_key']||''};kp={};}channels.push(ch);ch=null;}}return channels; }
+        function populateGroups() { const gs=document.getElementById("groupSelect"),groups=new Set();currentChannels.forEach(c=>{if(c.group)groups.add(c.group);});gs.innerHTML='<option value="all">Tất cả</option>';Array.from(groups).sort().forEach(g=>{const o=document.createElement("option");o.value=g;o.textContent=g;gs.appendChild(o);}); }
+        async function sortChannelsAZ() { const pl=playlists.find(p=>p.id===currentPlaylistId);if(!pl||!await showConfirm("Sắp xếp A-Z?"))return;pl.channels.sort((a,b)=>a.name.localeCompare(b.name,'vi',{sensitivity:'base'}));await savePlaylistToDB(pl);currentChannels=pl.channels;renderChannels();showToast("Đã sắp xếp."); }
+        async function sortChannelsByGroup() { const pl=playlists.find(p=>p.id===currentPlaylistId);if(!pl||!await showConfirm("Gom nhóm?"))return;pl.channels.sort((a,b)=>{const g=(a.group||"").localeCompare(b.group||"",'vi',{sensitivity:'base'});return g!==0?g:a.name.localeCompare(b.name,'vi',{sensitivity:'base'});});await savePlaylistToDB(pl);currentChannels=pl.channels;renderChannels();showToast("Đã gom nhóm."); }
+        function parseXMLTV(xmlText) { if(!xmlText)throw new Error("Dữ liệu trống.");const parser=new DOMParser(),xmlDoc=parser.parseFromString(xmlText,"text/xml"),progs=xmlDoc.getElementsByTagName("programme");if(progs.length===0)return parseXMLTVWithRegex(xmlText);const epg={},now=Date.now(),tl=now-21600000;for(let i=0;i<progs.length;i++){const p=progs[i],cid=p.getAttribute("channel");if(!cid)continue;const s=parseEPGTime(p.getAttribute("start")),e=parseEPGTime(p.getAttribute("stop"));if(!s||!e||e<tl)continue;const t=p.getElementsByTagName("title")[0]?.textContent||"Chương trình",d=p.getElementsByTagName("desc")[0]?.textContent||"";const k=cid.toLowerCase();if(!epg[k])epg[k]=[];epg[k].push({start:s,stop:e,title:t,desc:d});}Object.keys(epg).forEach(k=>epg[k].sort((a,b)=>a.start-b.start));return epg; }
+        function parseXMLTVWithRegex(xmlText) { const epg={},now=Date.now(),tl=now-21600000,rx=/<programme\s+[^>]*channel="([^"]+)"[^>]*start="([^"]+)"[^>]*stop="([^"]+)"[^>]*>([\s\S]*?)<\/programme>/g;let m;while((m=rx.exec(xmlText))!==null){const cid=m[1],s=parseEPGTime(m[2]),e=parseEPGTime(m[3]);if(!s||!e||e<tl)continue;const tm=m[4].match(/<title[^>]*>([\s\S]*?)<\/title>/),t=tm?tm[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/,'$1').trim().replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>'):"Chương trình";const dm=m[4].match(/<desc[^>]*>([\s\S]*?)<\/desc>/),d=dm?dm[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/,'$1').trim().replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>'):"";const k=cid.toLowerCase();if(!epg[k])epg[k]=[];epg[k].push({start:s,stop:e,title:t,desc:d});}Object.keys(epg).forEach(k=>epg[k].sort((a,b)=>a.start-b.start));return epg; }
+        function parseEPGTime(ts) { if(!ts)return null;const p=ts.trim().split(/\s+/),b=p[0];if(b.length<14)return null;let d=new Date(Date.UTC(+b.substring(0,4),+b.substring(4,6)-1,+b.substring(6,8),+b.substring(8,10),+b.substring(10,12),+b.substring(12,14)));if(p[1]){const sign=p[1][0]==='+'?-1:1,oh=+p[1].substring(1,3),om=+p[1].substring(3,5);d=new Date(d.getTime()+(oh*60+om)*sign*60000);}return d.getTime(); }
+        function loadEpgCacheFromDB() { return new Promise(resolve=>{if(isLocalStorageFallback){epgChannelsMap=JSON.parse(localStorage.getItem("fallback_epg")||"{}");resolve();}else{if(!db){resolve();return;}const tx=db.transaction("epg","readonly"),req=tx.objectStore("epg").getAll();req.onsuccess=()=>{epgChannelsMap={};(req.result||[]).forEach(i=>{epgChannelsMap[i.channelId.toLowerCase()]=i.programs;});resolve();};req.onerror=()=>{isLocalStorageFallback=true;loadEpgCacheFromDB().then(resolve);};}}); }
+        function saveEpgDataToDB(dict) { return new Promise((resolve,reject)=>{if(isLocalStorageFallback){epgChannelsMap=dict;localStorage.setItem("fallback_epg",JSON.stringify(dict));resolve();}else{if(!db){reject(new Error("DB not ready"));return;}const tx=db.transaction("epg","readwrite"),store=tx.objectStore("epg");store.clear();const keys=Object.keys(dict);let done=0,err=false;if(keys.length===0){resolve();return;}keys.forEach(k=>{const r=store.put({channelId:k,programs:dict[k]});r.onsuccess=()=>{done++;if(done===keys.length&&!err)resolve();};r.onerror=()=>{err=true;reject(r.error);};});}}); }
+        async function saveEpgSource() { if(activeEpgTab==='url'){const url=document.getElementById("epgUrl").value.trim();if(!url){showToast("Nhập URL!","error");return;}showToast("Đang nạp EPG...","info");try{const xml=await fetchWithFallbackProxies(url);await processAndSaveEPG(xml,url);}catch(e){showToast(e.message,"error");}}else if(activeEpgTab==='file'){const fi=document.getElementById("epgFileInput");if(fi.files.length===0){showToast("Chọn tệp!","error");return;}const reader=new FileReader();reader.onload=async e=>{await processAndSaveEPG(e.target.result,fi.files[0].name);};reader.readAsText(fi.files[0]);}else{const txt=document.getElementById("epgTextPaste").value.trim();if(!txt){showToast("Nhập XML!","error");return;}await processAndSaveEPG(txt,"Dán trực tiếp");} }
+        async function processAndSaveEPG(xml,src) { try{const dict=parseXMLTV(xml),count=Object.keys(dict).length;if(count===0)throw new Error("Lỗi EPG.");await saveEpgDataToDB(dict);localStorage.setItem("iptv_epg_last_update",Date.now().toString());localStorage.setItem("iptv_epg_source_url",src);await loadEpgCacheFromDB();initEpgUI();renderChannels();updateCurrentEpgDisplay();toggleEpgModal(false);showToast(`Nạp thành công ${count} kênh EPG!`,"success");}catch(e){showToast(`Lỗi EPG: ${e.message}`,"error");} }
+        function initEpgUI() { const lu=localStorage.getItem("iptv_epg_last_update"),su=localStorage.getItem("iptv_epg_source_url")||"Chưa cài đặt";document.getElementById("lblEpgSource").textContent=su;document.getElementById("lblEpgLastUpdate").textContent=lu?new Date(parseInt(lu)).toLocaleString():"Chưa rõ";document.getElementById("lblEpgChannelsCount").textContent=Object.keys(epgChannelsMap).length; }
+        async function deleteEpgData() { if(!await showConfirm("Dọn EPG?","Lịch sẽ bị xóa."))return;epgChannelsMap={};localStorage.removeItem("fallback_epg");localStorage.removeItem("iptv_epg_last_update");localStorage.removeItem("iptv_epg_source_url");if(!isLocalStorageFallback&&db){db.transaction("epg","readwrite").objectStore("epg").clear();}initEpgUI();renderChannels();updateCurrentEpgDisplay();showToast("Đã dọn EPG.","success"); }
+        function getChannelKey(c) { return `${c.name}_${c.url}`.replace(/[^a-zA-Z0-9]/g,"_"); }
+        function getChannelEpgPrograms(ch) { if(!ch)return null;if(ch.tvgId){const p=epgChannelsMap[ch.tvgId.toLowerCase()];if(p)return p;}if(ch.name){const p=epgChannelsMap[ch.name.toLowerCase().trim()];if(p)return p;}return null; }
+        function getActiveProgram(p) { if(!p)return null;const now=Date.now();return p.find(x=>x.start<=now&&x.stop>=now); }
+        function toggleFavoritesOnly() { showFavoritesOnly=!showFavoritesOnly;const btn=document.getElementById("favToggleBtn");if(showFavoritesOnly)btn.classList.add("bg-primary/10","text-yellow-500","border-primary/40");else btn.classList.remove("bg-primary/10","text-yellow-500","border-primary/40");renderChannels(); }
+        function toggleFavorite(key) { if(favorites[key])delete favorites[key];else favorites[key]=true;localStorage.setItem("iptv_favorites",JSON.stringify(favorites));renderChannels(); }
+
+        // ==================== RENDER CHANNELS ====================
+        function renderChannels() {
+            const lc=document.getElementById("channelList"),sq=document.getElementById("searchInput").value.toLowerCase().trim(),gf=document.getElementById("groupSelect").value;
+            lc.innerHTML="";
+            if(currentChannels.length===0){lc.innerHTML='<div class="text-center py-10 text-muted text-xs">Chưa nạp Playlist.</div>';document.getElementById("channelCount").textContent="Kênh: 0";return;}
+            const filtered=currentChannels.filter(c=>{const sk=c.name.toLowerCase().includes(sq),gk=gf==="all"||c.group===gf,fk=!showFavoritesOnly||!!favorites[getChannelKey(c)],hk=showHidden||!hiddenChannels[getChannelKey(c)];return sk&&gk&&fk&&hk;});
+            const MAX=150,displayed=filtered.slice(0,MAX);
+            document.getElementById("channelCount").textContent=`${filtered.length} Kênh`;
+            if(filtered.length===0){lc.innerHTML='<div class="text-center py-10 text-muted text-xs">Không tìm thấy.</div>';return;}
+            displayed.forEach(ch=>{
+                const key=getChannelKey(ch),isFav=!!favorites[key],isPlaying=currentActiveChannels[activeSlotIndex]&&currentActiveChannels[activeSlotIndex].url===ch.url,isHidden=!!hiddenChannels[key],curProg=getActiveProgram(getChannelEpgPrograms(ch)),hasDrm=!!ch.drm;
+                let epgHtml='';
+                if(curProg){const ss=new Date(curProg.start).toLocaleTimeString("vi-VN",{hour:'2-digit',minute:'2-digit'}),se=new Date(curProg.stop).toLocaleTimeString("vi-VN",{hour:'2-digit',minute:'2-digit'}),pct=Math.max(0,Math.min(100,((Date.now()-curProg.start)/(curProg.stop-curProg.start))*100));epgHtml=`<div class="mt-1 flex flex-col gap-0.5"><span class="text-primary text-[10px] truncate font-bold"><i class="fa-regular fa-clock"></i> ${ss}-${se} • ${curProg.title}</span><div class="w-full bg-borderInput/30 rounded-full h-1 overflow-hidden"><div class="bg-primary h-full" style="width:${pct}%"></div></div></div>`;}
+                const div=document.createElement("div");
+                div.className=`channel-item group flex flex-col p-2 rounded-xl transition border cursor-pointer ${isPlaying?'active-channel border-primary/50':'hover:bg-variant/60 border-borderColor bg-variant/20'} ${isHidden?'opacity-40':''}`;
+                div.onclick=e=>{if(!e.target.closest('button'))playChannel(ch);};
+                div.innerHTML=`<div class="flex items-center justify-between min-w-0"><div class="flex items-center gap-2 min-w-0 flex-1"><img src="${ch.logo||''}" onerror="this.src='https://placehold.co/40x40/252529/a5b4fc?text=TV'" class="w-10 h-10 rounded-lg object-contain bg-variant border border-borderInput p-1 shrink-0"><div class="min-w-0 flex-1"><h4 class="text-xs font-bold text-main truncate ${isPlaying?'text-primary':''}">${ch.name} ${hasDrm?'<span class="text-[7px] text-yellow-500/70">🔒</span>':''}</h4><p class="text-[10px] text-muted font-bold mt-0.5 truncate">${ch.group}</p></div></div><div class="flex items-center gap-1 shrink-0">${isPlaying?'<div class="playing-indicator mr-1"><div class="indicator-bar" style="animation-delay:0s"></div><div class="indicator-bar" style="animation-delay:0.2s"></div><div class="indicator-bar" style="animation-delay:0.4s"></div></div>':''}<button class="text-muted hover:text-yellow-500 p-0.5 transition" onclick="event.stopPropagation();toggleFavorite('${key}')"><i class="${isFav?'fa-solid fa-star text-yellow-500':'fa-regular fa-star'}"></i></button></div></div>${epgHtml}`;
+                lc.appendChild(div);
+            });
+            if(filtered.length>MAX){const h=document.createElement("div");h.className="text-center py-2 text-muted text-[9px] italic border-t border-borderColor/20 mt-1";h.textContent=`Hiển thị ${MAX}/${filtered.length}. Dùng tìm kiếm để lọc.`;lc.appendChild(h);}
+        }
+        let filterTimeout=null; function filterChannels(){clearTimeout(filterTimeout);filterTimeout=setTimeout(renderChannels,150);}
+
+        // ==================== PLAY CHANNEL ====================
+        async function playChannel(chan) {
+            currentActiveChannels[activeSlotIndex]=chan;
+            const video=document.getElementById(`videoPlayer${activeSlotIndex}`),vis=document.getElementById(`audioVisualizer${activeSlotIndex}`),ph=document.getElementById("playerPlaceholder");
+            if(ph)ph.classList.add("hidden");
+            const isAudio=chan.group.toLowerCase().includes("radio")||chan.group.toLowerCase().includes("music")||chan.name.toLowerCase().includes("radio");
+            if(vis){if(isAudio)vis.classList.remove("hidden");else vis.classList.add("hidden");}
+            updateChannelBar(chan);
+            const isDrm=!!chan.drm,isDash=chan.url.includes(".mpd");
+            if(players[activeSlotIndex]){try{if(players[activeSlotIndex].destroy)await players[activeSlotIndex].destroy();}catch(e){}players[activeSlotIndex]=null;}
+            for(let i=0;i<4;i++){const v=document.getElementById(`videoPlayer${i}`);if(v)v.muted=(i!==activeSlotIndex);}
+            if(isDrm||isDash){if(typeof shaka!=='undefined'&&shaka.Player.isBrowserSupported()){const player=new shaka.Player(video);players[activeSlotIndex]=player;if(isDrm){const cfg={};const dt=chan.drm.type?chan.drm.type.toLowerCase():'';if(dt.includes('clearkey')){let ck={};if(chan.drm.key&&chan.drm.key.includes(':')){const p=chan.drm.key.split(/[:=]/);if(p.length===2)ck[p[0].trim()]=p[1].trim();}else if(chan.drm.keyId&&chan.drm.key)ck[chan.drm.keyId]=chan.drm.key;else{try{ck=JSON.parse(chan.drm.key);}catch(e){ck['default']=chan.drm.key;}}cfg.clearKeys=ck;}else{cfg.servers={'com.widevine.alpha':chan.drm.key,'com.microsoft.playready':chan.drm.key};}player.configure({drm:cfg});}try{await player.load(chan.url);safePlay(video);showToast("Đang phát DRM","success");}catch(e){showToast("Lỗi DRM: "+e.message,"error");}}else{showToast("Shaka không khả dụng.","error");}}else{
+                const isHls=chan.url.includes(".m3u8");
+                if(isHls&&typeof Hls!=='undefined'&&Hls.isSupported()){const hls=new Hls({maxMaxBufferLength:10,enableWorker:false,lowLatencyMode:false,backBufferLength:30,maxBufferLength:30,maxBufferSize:60000000});players[activeSlotIndex]=hls;hls.loadSource(chan.url);hls.attachMedia(video);hls.on(Hls.Events.MANIFEST_PARSED,()=>safePlay(video));hls.on(Hls.Events.ERROR,(e,d)=>{if(d.fatal){if(d.type===Hls.ErrorTypes.NETWORK_ERROR)hls.startLoad();else if(d.type===Hls.ErrorTypes.MEDIA_ERROR)hls.recoverMediaError();else{video.src=chan.url;}}});}
+                else{video.src=chan.url;safePlay(video);}
+            }
+            const pb=document.getElementById("ctrlPlayBtn");if(pb)pb.innerHTML='<i class="fa-solid fa-pause text-xs"></i>';
+            renderChannels();updateCurrentEpgDisplay();
+        }
+
+
+        // ==================== CONTROLS ====================
+        function togglePlayPause(){const v=document.getElementById(`videoPlayer${activeSlotIndex}`),b=document.getElementById("ctrlPlayBtn");if(!v)return;if(v.paused){safePlay(v);if(b)b.innerHTML='<i class="fa-solid fa-pause text-xs"></i>';}else{v.pause();if(b)b.innerHTML='<i class="fa-solid fa-play text-xs"></i>';}}
+        function toggleMute(){const v=document.getElementById(`videoPlayer${activeSlotIndex}`),b=document.getElementById("ctrlMuteBtn");if(!v)return;v.muted=!v.muted;if(b)b.innerHTML=v.muted?'<i class="fa-solid fa-volume-xmark text-xs"></i>':'<i class="fa-solid fa-volume-high text-xs"></i>';}
+        function togglePip(){const v=document.getElementById(`videoPlayer${activeSlotIndex}`);if(!v)return;if(document.pictureInPictureElement)document.exitPictureInPicture();else v.requestPictureInPicture().catch(()=>showToast("Lỗi PIP","error"));}
+        function toggleFullscreen(){const c=document.getElementById("videoPlayer"+activeSlotIndex);if(!c)return;if(document.fullscreenElement)document.exitFullscreen();else c.requestFullscreen();}
+        function retryPlayback(){const ch=currentActiveChannels[activeSlotIndex];if(ch)playChannel(ch);}
+        function toggleSidebar(){sidebarCollapsed=!sidebarCollapsed;const s=document.getElementById("sidebarSection"),ti=document.getElementById("sidebarToggleIcon"),tb=document.getElementById("sidebarToggleBtn");if(sidebarCollapsed){s.classList.add("hidden-sidebar");if(ti)ti.className="fa-solid fa-chevron-right text-[8px]";if(tb)tb.style.left="8px";}else{s.classList.remove("hidden-sidebar");if(ti)ti.className="fa-solid fa-chevron-left text-[8px]";if(tb)tb.style.left="";}}
+        function toggleCinemaMode(){cinemaModeActive=!cinemaModeActive;document.body.classList.toggle('cinema-mode-active',cinemaModeActive);showToast(cinemaModeActive?"Bật rạp phim":"Tắt rạp phim","success");}
+        function toggleSettingsModal(s){document.getElementById("settingsModal").classList.toggle("hidden",!s);}
+        function togglePlaylistModal(s){document.getElementById("playlistModal").classList.toggle("hidden",!s);}
+        function toggleEpgModal(s){document.getElementById("epgModal").classList.toggle("hidden",!s);}
+        function toggleAboutModal(s){document.getElementById("aboutModal").classList.toggle("hidden",!s);}
+        function openPlaylistSetup(){toggleSettingsModal(false);togglePlaylistModal(true);}
+        function openEpgSetup(){toggleSettingsModal(false);toggleEpgModal(true);}
+        function switchEpgTab(tab){activeEpgTab=tab;['url','file','text'].forEach(t=>{document.getElementById(`tab-epg-${t}`).className=`flex-1 py-1.5 text-xs font-bold ${t===tab?'text-primary border-b-2 border-primary':'text-muted border-b-2 border-transparent'} transition`;document.getElementById(`panel-epg-${t}`).className=t===tab?'space-y-1.5':'hidden';});}
+        function switchTab(tab){activeTab=tab;document.getElementById("tab-url").className=`flex-1 py-1.5 text-xs font-bold ${tab==='url'?'text-primary border-b-2 border-primary':'text-muted border-b-2 border-transparent'} transition`;document.getElementById("tab-file").className=`flex-1 py-1.5 text-xs font-bold ${tab==='file'?'text-primary border-b-2 border-primary':'text-muted border-b-2 border-transparent'} transition`;document.getElementById("panel-url").classList.toggle("hidden",tab!=='url');document.getElementById("panel-file").classList.toggle("hidden",tab!=='file');}
+        function toggleTheme(){const cur=localStorage.getItem("iptv_ui_theme")||"dark",next=cur==="dark"?"light":"dark";applyUiTheme(next);}
+        function applyUiTheme(t){const h=document.documentElement,i=document.getElementById("themeToggleIconMobile");if(t==='light'){h.classList.remove('dark-theme');h.classList.add('light-theme');if(i)i.className="fa-solid fa-sun text-yellow-500 animate-spin-slow";}else{h.classList.remove('light-theme');h.classList.add('dark-theme');if(i)i.className="fa-solid fa-moon text-primary-light";}localStorage.setItem("iptv_ui_theme",t);}
+        function applyColorTheme(t){const theme=colorThemes[t]||colorThemes.indigo,r=document.documentElement;r.style.setProperty('--color-primary',theme.primary);r.style.setProperty('--color-primary-hover',theme.hover);r.style.setProperty('--color-primary-light',theme.light);r.style.setProperty('--color-primary-light-bg',theme.lightAlpha);r.style.setProperty('--color-primary-focus-alpha',theme.focusAlpha);localStorage.setItem("iptv_color_theme",t);}
+
+        // ==================== SIDEBAR VIEW ====================
+        function setSidebarView(view){currentSidebarView=view;const tc=document.getElementById("sidebarTabChannels"),te=document.getElementById("sidebarTabEpg"),cl=document.getElementById("channelList"),ec=document.getElementById("sidebarEpgContainer");if(view==='channels'){tc.className="flex-1 py-2 text-[11px] font-extrabold text-primary border-b-2 border-primary transition flex items-center justify-center gap-1";te.className="flex-1 py-2 text-[11px] font-extrabold text-muted border-b-2 border-transparent transition flex items-center justify-center gap-1";cl.classList.remove("hidden");ec.classList.add("hidden");}else{tc.className="flex-1 py-2 text-[11px] font-extrabold text-muted border-b-2 border-transparent transition flex items-center justify-center gap-1";te.className="flex-1 py-2 text-[11px] font-extrabold text-primary border-b-2 border-primary transition flex items-center justify-center gap-1";cl.classList.add("hidden");ec.classList.remove("hidden");updateSidebarEpgDisplay();}}
+        function updateSidebarEpgDisplay(){const c=document.getElementById("sidebarEpgContainer"),ch=currentActiveChannels[activeSlotIndex];if(!ch){c.innerHTML='<div class="text-center py-10 text-muted text-xs"><i class="fa-solid fa-calendar-xmark text-2xl mb-2 block"></i>Chưa chọn kênh.</div>';return;}const progs=getChannelEpgPrograms(ch);if(!progs||progs.length===0){c.innerHTML=`<div class="text-center py-10 text-muted text-xs"><p>Không có EPG cho: ${ch.name}</p></div>`;return;}const now=Date.now(),ap=getActiveProgram(progs),up=progs.filter(p=>p.stop>now-900000).slice(0,12);let h=`<h5 class="text-[9px] font-bold text-primary uppercase tracking-wider mb-2">Chương trình</h5><div class="space-y-1.5">`;up.forEach(p=>{const ss=new Date(p.start).toLocaleTimeString("vi-VN",{hour:'2-digit',minute:'2-digit'}),se=new Date(p.stop).toLocaleTimeString("vi-VN",{hour:'2-digit',minute:'2-digit'}),cur=ap&&p.start===ap.start;let ph='';if(cur){const pct=Math.min(100,Math.max(0,((now-p.start)/(p.stop-p.start))*100));ph=`<div class="w-full bg-borderInput/30 rounded-full h-1 mt-1 overflow-hidden"><div class="bg-primary h-full" style="width:${pct}%"></div></div>`;}h+=`<div class="p-2 rounded-lg ${cur?'bg-primary/10 border border-primary/30':'bg-variant/30 border border-transparent'}"><div class="flex justify-between items-center"><span class="text-[9px] font-bold ${cur?'text-primary':'text-primary-light'}">${ss}-${se}</span>${cur?'<span class="text-[7px] bg-primary text-white font-bold px-1 py-0.5 rounded-full">LIVE</span>':''}</div><h4 class="text-[11px] font-semibold mt-0.5 text-white/90">${p.title}</h4>${p.desc?`<p class="text-[9px] text-muted mt-0.5 line-clamp-2">${p.desc}</p>`:''}${ph}</div>`;});h+='</div>';c.innerHTML=h;}
+
+        // ==================== MULTIVIEW ====================
+        function setupPlaybackInteractions(si){const v=document.getElementById(`videoPlayer${si}`),c=document.getElementById(`mvSlot${si}`);if(!v||!c)return;c.addEventListener('dblclick',e=>{const r=c.getBoundingClientRect(),x=e.clientX-r.left;if(x<r.width*0.4){seekRelative(si,-10);showSeekFeedback(si,'left');}else if(x>r.width*0.6){seekRelative(si,10);showSeekFeedback(si,'right');}});}
+        function seekRelative(si,s){const v=document.getElementById(`videoPlayer${si}`);if(v&&!isNaN(v.duration)&&v.duration!==Infinity)v.currentTime=Math.max(0,Math.min(v.duration,v.currentTime+s));}
+        function showSeekFeedback(si,d){const f=document.getElementById(`seek${d==='left'?'Left':'Right'}Feedback${si}`);if(f){f.style.opacity='1';setTimeout(()=>f.style.opacity='0',800);}}
+        function stopSlotPlayback(i){const v=document.getElementById(`videoPlayer${i}`);if(v){try{v.pause();v.src="";v.removeAttribute("src");v.load();}catch(e){}}if(players[i]){try{if(players[i].destroy)players[i].destroy();}catch(e){}players[i]=null;}currentActiveChannels[i]=null;const vis=document.getElementById(`audioVisualizer${i}`);if(vis)vis.classList.add("hidden");}
+        function selectPrimaryMultiView(type){const c2=document.getElementById("mvBarSub_2"),c4=document.getElementById("mvBarSub_4");['1','2','4'].forEach(t=>{const b=document.getElementById(`mvBarBtn_${t}`);if(b)b.className="px-3 py-1 rounded-full text-[9px] font-extrabold transition bg-transparent text-muted";});const sb=document.getElementById(`mvBarBtn_${type}`);if(sb)sb.className="px-3 py-1 rounded-full text-[9px] font-extrabold transition bg-primary text-white";if(type==='1'){if(c2)c2.classList.add("hidden");if(c4)c4.classList.add("hidden");setMultiView('1');}else if(type==='2'){if(c2)c2.classList.remove("hidden");if(c4)c4.classList.add("hidden");setMultiView('2-horiz');}else{if(c2)c2.classList.add("hidden");if(c4)c4.classList.remove("hidden");setMultiView('4-grid');}}
+        function setMultiView(format){multiViewFormat=format;const grid=document.getElementById("multiviewGrid");grid.className="multiview-grid";for(let i=0;i<4;i++){document.getElementById(`mvSlot${i}`).className="multiview-box hidden";multiViewSlots[i]=false;}if(format==='1'){grid.className="multiview-grid grid-cols-1";document.getElementById("mvSlot0").className="multiview-box active-slot";multiViewSlots[0]=true;multiViewActive=false;}else if(format==='2-horiz'){grid.className="multiview-grid grid-cols-2 multi-active";document.getElementById("mvSlot0").className="multiview-box";document.getElementById("mvSlot1").className="multiview-box";multiViewSlots[0]=multiViewSlots[1]=true;multiViewActive=true;}else if(format==='2-vert'){grid.className="multiview-grid grid-cols-1 grid-rows-2 multi-active";document.getElementById("mvSlot0").className="multiview-box";document.getElementById("mvSlot1").className="multiview-box";multiViewSlots[0]=multiViewSlots[1]=true;multiViewActive=true;}else if(format==='4-grid'){grid.className="multiview-grid grid-cols-2 grid-rows-2 multi-active";for(let i=0;i<4;i++){document.getElementById(`mvSlot${i}`).className="multiview-box";multiViewSlots[i]=true;}multiViewActive=true;}for(let i=0;i<4;i++)if(!multiViewSlots[i])stopSlotPlayback(i);if(!multiViewSlots[activeSlotIndex])selectSlot(0);else selectSlot(activeSlotIndex);['2-horiz','2-vert','4-grid'].forEach(f=>{const b=document.getElementById(`mvBarBtn_${f}`);if(b)b.className=f===format?"px-2.5 py-1 rounded-full text-[10px] font-bold transition bg-primary text-white":"px-2.5 py-1 rounded-full text-[10px] font-bold transition bg-variant border border-borderInput text-muted hover:text-main";});}
+        function updateChannelBar(chan){}
+        function selectSlot(i){if(!multiViewSlots[i])return;for(let j=0;j<4;j++)document.getElementById("mvSlot"+j).classList.remove("active-slot");activeSlotIndex=i;document.getElementById("mvSlot"+i).classList.add("active-slot");for(let j=0;j<4;j++){const v=document.getElementById("videoPlayer"+j);if(v)v.muted=(j!==activeSlotIndex);}const ch=currentActiveChannels[activeSlotIndex];if(ch)updateChannelBar(ch);}
+        function stopAllPlaybacks(){for(let i=0;i<4;i++)stopSlotPlayback(i);document.getElementById("playerPlaceholder").classList.remove("hidden");showToast("Đã dừng.","success");}
+        function cycleNextSlot(){
+            if(!multiViewActive)return;
+            let next=activeSlotIndex+1;
+            let count=0;
+            while(count<4){
+                if(next>3)next=0;
+                if(multiViewSlots[next]){selectSlot(next);return;}
+                next++;
+                count++;
+            }
+        }
+        function updateCurrentEpgDisplay(){updateSidebarEpgDisplay();}
+        function updateEpgUIAndProgress(){renderChannels();updateCurrentEpgDisplay();}
+        async function clearAllData(){if(!await showConfirm("Xóa sạch bộ nhớ?","Toàn bộ sẽ bị xóa.",true))return;playlists=[];currentChannels=[];currentActiveChannels=[null,null,null,null];favorites={};epgChannelsMap={};localStorage.clear();updatePlaylistDropdown();renderChannels();showToast("Đã dọn sạch.","success");}
+
+        // ==================== INIT ====================
+        document.addEventListener("keydown",function(e){
+            if(document.activeElement.tagName==="INPUT"||document.activeElement.tagName==="TEXTAREA"||document.activeElement.tagName==="SELECT")return;
+            if(e.key==="ArrowLeft"){seekRelative(activeSlotIndex,-10);showSeekFeedback(activeSlotIndex,"left");e.preventDefault();}
+            else if(e.key==="ArrowRight"){seekRelative(activeSlotIndex,10);showSeekFeedback(activeSlotIndex,"right");e.preventDefault();}
+            else if(e.key===" "){togglePlayPause();e.preventDefault();}
+            else if((e.key==="ArrowUp"||e.key==="ArrowDown")&&multiViewActive){cycleNextSlot();e.preventDefault();}
+        });
+        window.onload = async function() {
+            try {
+                await initDB(); await loadPlaylistsFromDB(); await loadEpgCacheFromDB();
+                applyUiTheme(localStorage.getItem("iptv_ui_theme")||"dark");
+                applyColorTheme(localStorage.getItem("iptv_color_theme")||"indigo");
+                for(let i=0;i<4;i++)setupPlaybackInteractions(i);
+                initEpgUI(); setInterval(updateLiveCalendarAndClock,1000); updateLiveCalendarAndClock();
+                setInterval(updateEpgUIAndProgress,60000);
+                // Auto-hide floating controls
+                const stageEl = document.querySelector(".stage-container");
+                const floatCtrl = document.querySelector(".player-float-controls");
+                let floatTimer;
+                function showFloatCtrl(){if(floatCtrl){floatCtrl.classList.add("show");clearTimeout(floatTimer);floatTimer=setTimeout(()=>{floatCtrl.classList.remove("show");},3000);}}
+                if(stageEl){stageEl.addEventListener("mousemove",showFloatCtrl);stageEl.addEventListener("touchstart",showFloatCtrl,{passive:true});}
+            } catch(e) { console.error("Init error:",e); showToast("Lỗi khởi tạo.","error"); }
+        };
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a209b44b3c2a02a9',t:'MTc4NDk2NzE5NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

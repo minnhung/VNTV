@@ -207,25 +207,25 @@
             <div class="flex-1 relative bg-black overflow-hidden">
                 <div id="multiviewGrid" class="multiview-grid grid-cols-1">
                     <div id="mvSlot0" class="multiview-box active-slot" onclick="selectSlot(0)">
-                        <video id="videoPlayer0" class="w-full h-full object-contain" autoplay controls controlsList="nofullscreen" disablePictureInPicture></video>
+                        <video id="videoPlayer0" class="w-full h-full object-contain" autoplay controls></video>
                         <div id="audioVisualizer0" class="hidden absolute inset-0 bg-[#08080a] flex items-center justify-center z-10"><div class="wave-container"><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div></div></div>
                         <div id="seekLeftFeedback0" class="seek-feedback left-6"><i class="fa-solid fa-backward-fast text-white text-xl"></i></div>
                         <div id="seekRightFeedback0" class="seek-feedback right-6"><i class="fa-solid fa-forward-fast text-white text-xl"></i></div>
                     </div>
                     <div id="mvSlot1" class="multiview-box hidden" onclick="selectSlot(1)">
-                        <video id="videoPlayer1" class="w-full h-full object-contain" autoplay controls controlsList="nofullscreen" disablePictureInPicture></video>
+                        <video id="videoPlayer1" class="w-full h-full object-contain" autoplay controls></video>
                         <div id="audioVisualizer1" class="hidden absolute inset-0 bg-[#08080a] flex items-center justify-center z-10"><div class="wave-container"><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div></div></div>
                         <div id="seekLeftFeedback1" class="seek-feedback left-6"><i class="fa-solid fa-backward-fast text-white text-xl"></i></div>
                         <div id="seekRightFeedback1" class="seek-feedback right-6"><i class="fa-solid fa-forward-fast text-white text-xl"></i></div>
                     </div>
                     <div id="mvSlot2" class="multiview-box hidden" onclick="selectSlot(2)">
-                        <video id="videoPlayer2" class="w-full h-full object-contain" autoplay controls controlsList="nofullscreen" disablePictureInPicture></video>
+                        <video id="videoPlayer2" class="w-full h-full object-contain" autoplay controls></video>
                         <div id="audioVisualizer2" class="hidden absolute inset-0 bg-[#08080a] flex items-center justify-center z-10"><div class="wave-container"><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div></div></div>
                         <div id="seekLeftFeedback2" class="seek-feedback left-6"><i class="fa-solid fa-backward-fast text-white text-xl"></i></div>
                         <div id="seekRightFeedback2" class="seek-feedback right-6"><i class="fa-solid fa-forward-fast text-white text-xl"></i></div>
                     </div>
                     <div id="mvSlot3" class="multiview-box hidden" onclick="selectSlot(3)">
-                        <video id="videoPlayer3" class="w-full h-full object-contain" autoplay controls controlsList="nofullscreen" disablePictureInPicture></video>
+                        <video id="videoPlayer3" class="w-full h-full object-contain" autoplay controls></video>
                         <div id="audioVisualizer3" class="hidden absolute inset-0 bg-[#08080a] flex items-center justify-center z-10"><div class="wave-container"><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div></div></div>
                         <div id="seekLeftFeedback3" class="seek-feedback left-6"><i class="fa-solid fa-backward-fast text-white text-xl"></i></div>
                         <div id="seekRightFeedback3" class="seek-feedback right-6"><i class="fa-solid fa-forward-fast text-white text-xl"></i></div>
@@ -242,6 +242,7 @@
                     <button class="ctrl-btn tooltip" data-tip="Play/Pause" onclick="togglePlayPause()" id="ctrlPlayBtn"><i class="fa-solid fa-pause text-sm" ></i></button>
                     <button class="ctrl-btn tooltip" data-tip="Tải lại" onclick="retryPlayback()"><i class="fa-solid fa-rotate-right text-sm"></i></button>
                     <button class="ctrl-btn tooltip" data-tip="Rạp phim" onclick="toggleCinemaMode()" id="ctrlCinemaBtn"><i class="fa-solid fa-lightbulb text-sm"></i></button>
+                    <button class="ctrl-btn tooltip" data-tip="Toàn màn hình" onclick="toggleFullscreen()"><i class="fa-solid fa-expand text-sm"></i></button>
                     <button class="ctrl-btn tooltip" data-tip="PIP" onclick="togglePip()"><i class="fa-solid fa-clone text-sm"></i></button>
                 </div>
             </div>
@@ -472,8 +473,28 @@
         // ==================== CONTROLS ====================
         function togglePlayPause(){const v=document.getElementById(`videoPlayer${activeSlotIndex}`),b=document.getElementById("ctrlPlayBtn");if(!v)return;if(v.paused){safePlay(v);if(b)b.innerHTML='<i class="fa-solid fa-pause text-xs"></i>';}else{v.pause();if(b)b.innerHTML='<i class="fa-solid fa-play text-xs"></i>';}}
         function toggleMute(){const v=document.getElementById(`videoPlayer${activeSlotIndex}`),b=document.getElementById("ctrlMuteBtn");if(!v)return;v.muted=!v.muted;if(b)b.innerHTML=v.muted?'<i class="fa-solid fa-volume-xmark text-xs"></i>':'<i class="fa-solid fa-volume-high text-xs"></i>';}
-        function togglePip(){const v=document.getElementById(`videoPlayer${activeSlotIndex}`);if(!v)return;if(document.pictureInPictureElement)document.exitPictureInPicture();else v.requestPictureInPicture().catch(()=>showToast("Lỗi PIP","error"));}
-        function toggleFullscreen(){const c=document.getElementById("videoPlayer"+activeSlotIndex);if(!c)return;if(document.fullscreenElement)document.exitFullscreen();else c.requestFullscreen();}
+        function toggleFullscreen(){
+            const c=document.querySelector(".stage-container");
+            if(!c)return;
+            if(document.fullscreenElement||document.webkitFullscreenElement){
+                (document.exitFullscreen||document.webkitExitFullscreen||document.mozCancelFullScreen).call(document);
+            }else{
+                (c.requestFullscreen||c.webkitRequestFullscreen||c.mozRequestFullScreen).call(c);
+            }
+        }
+        function togglePip(){
+            const v=document.getElementById("videoPlayer"+activeSlotIndex);
+            if(!v)return;
+            if(document.pictureInPictureElement){
+                document.exitPictureInPicture().catch(()=>{});
+            }else if(document.pictureInPictureEnabled && v.requestPictureInPicture){
+                v.requestPictureInPicture().catch(e=>{
+                    showToast("PIP không khả dụng","error");
+                });
+            }else{
+                showToast("PIP không hỗ trợ trên trình duyệt này","error");
+            }
+        }
         function retryPlayback(){const ch=currentActiveChannels[activeSlotIndex];if(ch)playChannel(ch);}
         function toggleSidebar(){sidebarCollapsed=!sidebarCollapsed;const s=document.getElementById("sidebarSection"),ti=document.getElementById("sidebarToggleIcon"),tb=document.getElementById("sidebarToggleBtn");if(sidebarCollapsed){s.classList.add("hidden-sidebar");if(ti)ti.className="fa-solid fa-chevron-right text-[8px]";if(tb)tb.style.left="8px";}else{s.classList.remove("hidden-sidebar");if(ti)ti.className="fa-solid fa-chevron-left text-[8px]";if(tb)tb.style.left="";}}
         function toggleCinemaMode(){cinemaModeActive=!cinemaModeActive;document.body.classList.toggle('cinema-mode-active',cinemaModeActive);showToast(cinemaModeActive?"Bật rạp phim":"Tắt rạp phim","success");}
@@ -543,5 +564,5 @@
             } catch(e) { console.error("Init error:",e); showToast("Lỗi khởi tạo.","error"); }
         };
     </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a209b44b3c2a02a9',t:'MTc4NDk2NzE5NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a209b44b3c2a02a9',t:'MTc4NDk2NzE5NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2109fb92ab50655',t:'MTc4NTAzOTc1Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

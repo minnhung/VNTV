@@ -688,21 +688,6 @@
                         
         // ==================== SIDEBAR VIEW ====================        
         function setSidebarView(view){currentSidebarView=view;const tc=document.getElementById("sidebarTabChannels"),te=document.getElementById("sidebarTabEpg"),cl=document.getElementById("channelList"),ec=document.getElementById("sidebarEpgContainer");if(view==='channels'){tc.className="flex-1 py-2 text-[11px] font-extrabold text-primary border-b-2 border-primary transition flex items-center justify-center gap-1";te.className="flex-1 py-2 text-[11px] font-extrabold text-muted border-b-2 border-transparent transition flex items-center justify-center gap-1";cl.classList.remove("hidden");ec.classList.add("hidden");}else{tc.className="flex-1 py-2 text-[11px] font-extrabold text-muted border-b-2 border-transparent transition flex items-center justify-center gap-1";te.className="flex-1 py-2 text-[11px] font-extrabold text-primary border-b-2 border-primary transition flex items-center justify-center gap-1";cl.classList.add("hidden");ec.classList.remove("hidden");updateSidebarEpgDisplay();}}
-       function showEmpireSchedule(){
-const c=document.getElementById("sidebarEpgContainer");
-
-if(!c) return;
-
-c.innerHTML=`
-<div class="p-3">
-<h3>📚 Lịch học Empire</h3>
-
-<div>21:30 - 23:00 | Tiếng Anh</div>
-<div>21:30 - 23:00 | Toán</div>
-
-</div>
-`;
-}
         function showEmpireSchedule(){
 
 const c=document.getElementById("sidebarEpgContainer");
@@ -720,7 +705,7 @@ c.innerHTML=`
 `;
 }
 
-showEmpireSchedule();
+showEmpireSchedule(){
 
 function updateSidebarEpgDisplay(){
         function updateSidebarEpgDisplay(){const c=document.getElementById("sidebarEpgContainer"),ch=currentActiveChannels[activeSlotIndex];if(!ch){c.innerHTML='<div class="text-center py-10 text-muted text-xs"><i class="fa-solid fa-calendar-xmark text-2xl mb-2 block"></i>Chưa chọn kênh.</div>';return;}const progs=getChannelEpgPrograms(ch);if(!progs||progs.length===0){c.innerHTML=`<div class="text-center py-10 text-muted text-xs"><p>Không có EPG cho: ${ch.name}</p></div>`;return;}const now=Date.now(),ap=getActiveProgram(progs),up=progs.filter(p=>p.stop>now-900000).slice(0,12);let h=`<h5 class="text-[9px] font-bold text-primary uppercase tracking-wider mb-2">Chương trình</h5><div class="space-y-1.5">`;up.forEach(p=>{const ss=new Date(p.start).toLocaleTimeString("vi-VN",{hour:'2-digit',minute:'2-digit'}),se=new Date(p.stop).toLocaleTimeString("vi-VN",{hour:'2-digit',minute:'2-digit'}),cur=ap&&p.start===ap.start;let ph='';if(cur){const pct=Math.min(100,Math.max(0,((now-p.start)/(p.stop-p.start))*100));ph=`<div class="w-full bg-borderInput/30 rounded-full h-1 mt-1 overflow-hidden"><div class="bg-primary h-full" style="width:${pct}%"></div></div>`;}h+=`<div class="p-2 rounded-lg ${cur?'bg-primary/10 border border-primary/30':'bg-variant/30 border border-transparent'}"><div class="flex justify-between items-center"><span class="text-[9px] font-bold ${cur?'text-primary':'text-primary-light'}">${ss}-${se}</span>${cur?'<span class="text-[7px] bg-primary text-white font-bold px-1 py-0.5 rounded-full">LIVE</span>':''}</div><h4 class="text-[11px] font-semibold mt-0.5 text-white/90">${p.title}</h4>${p.desc?`<p class="text-[9px] text-muted mt-0.5 line-clamp-2">${p.desc}</p>`:''}${ph}</div>`;});h+='</div>';c.innerHTML=h;}

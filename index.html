@@ -211,6 +211,17 @@
                 <button onclick="stopAllPlaybacks()" class="ml-auto w-6 h-6 bg-red-950/30 hover:bg-red-900/50 text-red-400 border border-red-900/20 rounded-md flex items-center justify-center transition" title="Tắt"><i class="fa-solid fa-stop text-[8px]"></i></button>
             </div>
             <div class="px-3 py-2 bg-footer border-t border-borderColor text-[10px] text-muted flex justify-between items-center shrink-0">
+           <div class="p-2 border-t border-borderColor">
+    <div class="text-[10px] font-bold text-primary mb-1">
+        📝 Ghi chú cá nhân
+    </div>
+
+    <textarea
+        id="personalNotes"
+        placeholder="Ghi bài tập, deadline, lịch học..."
+        class="w-full h-28 bg-variant border border-borderColor rounded-lg p-2 text-xs text-main resize-none"
+    ></textarea>
+</div>
                 <span id="channelCount" class="font-bold">Kênh: 0</span>
                 <button onclick="clearAllData()" class="text-red-400 hover:text-red-300 font-extrabold text-[9px] tracking-wide transition">XÓA BỘ NHỚ</button>
             </div>
@@ -712,7 +723,19 @@
             else if(e.key===" "){togglePlayPause();e.preventDefault();}
             else if((e.key==="ArrowUp"||e.key==="ArrowDown")&&multiViewActive){cycleNextSlot();e.preventDefault();}
         });
-        window.onload = async function() {
+        window.onload = async function() {const notesBox = document.getElementById("personalNotes");
+
+if(notesBox){
+    notesBox.value =
+        localStorage.getItem("iptv_personal_notes") || "";
+
+    notesBox.addEventListener("input", function(){
+        localStorage.setItem(
+            "iptv_personal_notes",
+            notesBox.value
+        );
+    });
+}
             try {
                 await initDB(); await loadPlaylistsFromDB(); await loadEpgCacheFromDB();
                 applyUiTheme(localStorage.getItem("iptv_ui_theme")||"dark");

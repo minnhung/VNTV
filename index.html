@@ -211,17 +211,17 @@
                 <button onclick="stopAllPlaybacks()" class="ml-auto w-6 h-6 bg-red-950/30 hover:bg-red-900/50 text-red-400 border border-red-900/20 rounded-md flex items-center justify-center transition" title="Tắt"><i class="fa-solid fa-stop text-[8px]"></i></button>
             </div>
             <div class="px-3 py-2 bg-footer border-t border-borderColor text-[10px] text-muted flex justify-between items-center shrink-0">
-           <div class="p-2 border-t border-borderColor">
-    <div class="text-[10px] font-bold text-primary mb-1">
+         <details class="p-2 border-t border-borderColor">
+    <summary class="cursor-pointer text-[10px] font-bold text-primary">
         📝 Ghi chú cá nhân
-    </div>
+    </summary>
 
     <textarea
         id="personalNotes"
         placeholder="Ghi bài tập, deadline, lịch học..."
-        class="w-full h-28 bg-variant border border-borderColor rounded-lg p-2 text-xs text-main resize-none"
+        class="w-full h-24 mt-2 bg-variant border border-borderColor rounded-lg p-2 text-xs text-main resize-none"
     ></textarea>
-</div>
+</details>
                 <span id="channelCount" class="font-bold">Kênh: 0</span>
                 <button onclick="clearAllData()" class="text-red-400 hover:text-red-300 font-extrabold text-[9px] tracking-wide transition">XÓA BỘ NHỚ</button>
             </div>
